@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+#
+# BASH script to run basic Cargo commands.
+# Author: Igor Lesik 2021
+
+COMMANDS="help build release production clean run check test bench doc layout code assets samples"
+
+read -r -d '' COMMANDS_HELP << EOM
+Description of commands:
+
+build:
+    Build target with profile=debug.
+release:
+    Build target with profile=release.
+production:
+    Build target with profile=production which is "release" with LTO.
+
+[] means optional argument and <> means required argument.
+EOM
+
+# For auto completion with TAB: source ./prj
+complete -W "${COMMANDS}" ./prj
+
+BUILD_DIR=../build
+OPT_TARGET_DIR="--target-dir ${BUILD_DIR}"
+
+case "$1" in
+    help)
+        shift
+        echo Commands: ${COMMANDS}.
+        echo "For details: ./prj <CMD> --help"
+        echo "For auto completion: source ./prj"
+        echo "${COMMANDS_HELP}"
+        ;;
+    build)
+        shift
+        cargo build ${OPT_TARGET_DIR} $@
+        ;;
+    release)
+        shift
+        cargo build --release ${OPT_TARGET_DIR} $@
+        ;;
+    production)
+        shift
+        cargo build --profile production ${OPT_TARGET_DIR} $@
+        ;;
+    timing) #https://fasterthanli.me/articles/why-is-my-rust-build-so-slow
+        shift
+        cargo clean --release ${OPT_TARGET_DIR}
+        RUSTC_BOOTSTRAP=1 cargo build --release ${OPT_TARGET_DIR} --quiet -Z timings $@
+        mv -f cargo-timing*.* ${BUILD_DIR}/.
+        ls -lh ${BUILD_DIR}/cargo-timing.html
+        ;;
+    run)
+        shift
+        cargo run ${OPT_TARGET_DIR} $@
+        ;;
+    check)
+        shift
+        rustup update
+        cargo check ${OPT_TARGET_DIR} $@
+        cargo clippy ${OPT_TARGET_DIR} $@
+        ;;
+    test)
+        shift
+        cargo test -j 8 ${OPT_TARGET_DIR} $@
+        ;;
+    bench)
+        shift
+        cargo bench ${OPT_TARGET_DIR} $@
+        ;;
+    doc)
+        shift
+        cargo doc --no-deps ${OPT_TARGET_DIR} $@
+        echo "Now you can do:"
+        echo "firefox ${BUILD_DIR}/doc/svdocgen/index.html &"
+        ;;
+    clean)
+        shift
+        cargo clean ${OPT_TARGET_DIR} $@
+        ;;
+    layout)
+        shift
+        echo "https://doc.rust-lang.org/cargo/guide/project-layout.html"
+        tree .
+        echo
+        cargo tree
+        ;;
+    code)
+        shift
+        code -n . $@
+        ;;
+    assets)
+        shift
+        cd assets && make
+        ;;
+    samples)
+        shift
+        mkdir -p ${BUILD_DIR}/samples
+        cd samples && make SVDOCGEN="../${BUILD_DIR}/debug/svdocgen" TARGET_DIR="../${BUILD_DIR}/samples"
+        ;;
+    *)
+        echo Run ./prj help
+        ;;
+esac

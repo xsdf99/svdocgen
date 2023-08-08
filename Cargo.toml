@@ -1,0 +1,29 @@
+[package]
+name = "svdocgen"
+version = "0.1.0"
+authors = ["Igor Lesik <curoles@yahoo.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# cargo [cmd] --profile production
+[profile.production]
+inherits = "release"
+lto = true
+
+# https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html
+#
+[dependencies]
+svgbobdoc = { version = "0.2", features = [] }
+mdbook = "^0.4.14"
+clap = "^2.34.0"
+sv-parser = "^0.11.2"
+regex = "1"
+
+[[bin]]
+name = "svdocgen"
+path = "src/bin/main.rs"
+
+[lib]
+name = "svdocgen"
+path = "src/lib.rs"
